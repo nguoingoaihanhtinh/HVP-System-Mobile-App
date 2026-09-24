@@ -46,3 +46,6 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Duplicate Flutter project accidentally created inside this workspace.
+flutter_application_1/
