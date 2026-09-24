@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Học viên — App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#12162A;
+    --ink-2:#1B2140;
+    --card:#1F2647;
+    --card-hi:#262E54;
+    --line: rgba(236,237,243,0.08);
+    --text:#ECEDF3;
+    --text-dim:#9298B8;
+    --text-faint:#6A6F94;
+    --accent:#FF6A3D;
+    --accent-dim: rgba(255,106,61,0.14);
+    --teal:#2ED1B0;
+    --teal-dim: rgba(46,209,176,0.14);
+    --amber:#FFC352;
+    --amber-dim: rgba(255,195,82,0.14);
+    --radius: 20px;
+    --radius-sm: 12px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background: #05060D;
+    font-family:'Inter', sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding: 32px 16px;
+  }
+  .frame{
+    width: 390px;
+    max-width: 100%;
+    height: 820px;
+    background: var(--ink);
+    border-radius: 44px;
+    border: 10px solid #000;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04);
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .notch{
+    position:absolute;
+    top:10px; left:50%; transform:translateX(-50%);
+    width:120px; height:26px;
+    background:#000;
+    border-radius:0 0 18px 18px;
+    z-index:50;
+  }
+  .statusbar{
+    height:48px;
+    flex-shrink:0;
+    display:flex; align-items:flex-end; justify-content:space-between;
+    padding: 0 26px 8px;
+    font-size:13px;
+    font-weight:600;
+    color: var(--text);
+    letter-spacing:0.2px;
+  }
+  .screens{
+    flex:1;
+    position:relative;
+    overflow:hidden;
+  }
+  .screen{
+    position:absolute; inset:0;
+    overflow-y:auto;
+    padding: 4px 20px 24px;
+    opacity:0;
+    transform: translateY(8px);
+    pointer-events:none;
+    transition: opacity 0.28s ease, transform 0.28s ease;
+    scrollbar-width:none;
+  }
+  .screen::-webkit-scrollbar{display:none;}
+  .screen.active{
+    opacity:1;
+    transform:none;
+    pointer-events:auto;
+  }
+
+  /* ---------- shared ---------- */
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:1.6px;
+    text-transform:uppercase;
+    color: var(--text-faint);
+    font-weight:500;
+  }
+  h1.page-title{
+    font-family:'Oswald', sans-serif;
+    font-weight:600;
+    font-size:26px;
+    letter-spacing:0.2px;
+    color:var(--text);
+    margin-top:4px;
+  }
+  .card{
+    background: linear-gradient(180deg, var(--card-hi), var(--card));
+    border:1px solid var(--line);
+    border-radius: var(--radius);
+    padding:20px;
+  }
+  .section-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-top:26px; margin-bottom:12px;
+  }
+  .section-head .see-all{
+    font-size:12px; color:var(--text-faint); font-weight:600;
+  }
+
+  /* ---------- HOME ---------- */
+  .home-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 14px 0 20px;
+  }
+  .greet-name{
+    font-family:'Oswald', sans-serif;
+    font-size:24px;
+    font-weight:600;
+    color:var(--text);
+  }
+  .avatar{
+    width:44px; height:44px; border-radius:50%;
+    background: linear-gradient(145deg, var(--accent), #C43E17);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Oswald', sans-serif; font-weight:600; color:#fff; font-size:16px;
+    box-shadow: 0 6px 16px rgba(255,106,61,0.35);
+  }
+
+  .package-card{
+    position:relative;
+    margin-top:6px;
+    background:
+      radial-gradient(120% 140% at 100% 0%, rgba(255,106,61,0.22), transparent 55%),
+      linear-gradient(165deg, var(--card-hi), var(--card));
+    border:1px solid var(--line);
+    border-radius:24px;
+    padding:22px 22px 20px;
+    overflow:hidden;
+  }
+  .package-card::before{
+    content:"";
+    position:absolute; top:-40%; right:-20%;
+    width:220px; height:220px;
+    background: conic-gradient(from 90deg, rgba(255,106,61,0.18), transparent 60%);
+    border-radius:50%;
+  }
+  .pkg-top{
+    display:flex; align-items:center; justify-content:space-between;
+    position:relative; z-index:2;
+  }
+  .pkg-name{
+    font-family:'Oswald', sans-serif;
+    font-size:22px;
+    font-weight:600;
+    letter-spacing:0.5px;
+    color:var(--text);
+  }
+  .pkg-tag{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border:1px solid rgba(255,106,61,0.35);
+    padding:4px 9px;
+    border-radius:20px;
+    font-weight:600;
+    letter-spacing:0.5px;
+  }
+  .pkg-schedule{
+    margin-top:10px;
+    font-size:13.5px;
+    color: var(--text-dim);
+    display:flex; gap:8px; align-items:center;
+    position:relative; z-index:2;
+  }
+  .pkg-schedule b{ color:var(--text); font-weight:600; }
+  .dot{width:3px;height:3px;border-radius:50%;background:var(--text-faint);}
+
+  .pkg-expiry{
+    margin-top:14px;
+    font-size:12.5px;
+    color: var(--text-faint);
+    position:relative; z-index:2;
+  }
+  .pkg-expiry b{ color: var(--amber); font-weight:600; }
+
+  .progress-row{
+    margin-top:16px;
+    position:relative; z-index:2;
+  }
+  .progress-labels{
+    display:flex; justify-content:space-between;
+    font-size:12px; color:var(--text-dim); margin-bottom:7px;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .progress-track{
+    height:8px; border-radius:8px;
+    background: rgba(255,255,255,0.06);
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%; width:50%;
+    border-radius:8px;
+    background: linear-gradient(90deg, var(--accent), #FF9466);
+    transition: width 0.4s ease;
+  }
+
+  .cta-checkin{
+    margin-top:18px;
+    width:100%;
+    border:none;
+    border-radius:16px;
+    padding:16px;
+    background: linear-gradient(135deg, var(--accent), #E8551F);
+    color:#fff;
+    font-family:'Oswald', sans-serif;
+    font-size:16px;
+    font-weight:600;
+    letter-spacing:1px;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    box-shadow: 0 12px 24px rgba(255,106,61,0.28);
+    cursor:pointer;
+    position:relative; z-index:2;
+  }
+  .cta-checkin:active{ transform: scale(0.98); }
+
+  .cta-secondary{
+    margin-top:10px;
+    width:100%;
+    border:1px solid rgba(46,209,176,0.35);
+    border-radius:16px;
+    padding:14px;
+    background: var(--teal-dim);
+    color:var(--teal);
+    font-family:'Oswald', sans-serif;
+    font-size:14.5px;
+    font-weight:600;
+    letter-spacing:0.8px;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    cursor:pointer;
+    position:relative; z-index:2;
+  }
+  .cta-secondary:active{ transform: scale(0.98); }
+
+  .stat-row{
+    display:flex; gap:12px;
+    margin-top:14px;
+  }
+  .stat-card{
+    flex:1;
+    background: var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:14px 16px;
+  }
+  .stat-card .num{
+    font-family:'Oswald', sans-serif;
+    font-size:22px;
+    font-weight:600;
+    color:var(--text);
+    transition: color 0.2s ease;
+  }
+  .stat-card.points .num{ color: var(--teal); }
+  .stat-card .lbl{
+    font-size:11.5px;
+    color:var(--text-faint);
+    margin-top:2px;
+  }
+  .stat-icon{
+    font-size:15px;
+    margin-bottom:6px;
+    opacity:0.85;
+  }
+
+  .next-session{
+    display:flex; align-items:center; gap:14px;
+    padding:14px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    margin-bottom:10px;
+  }
+  .ns-date{
+    width:46px; text-align:center;
+    font-family:'Oswald', sans-serif;
+  }
+  .ns-date .d{ font-size:20px; font-weight:600; color:var(--text); line-height:1; }
+  .ns-date .m{ font-size:10px; color:var(--text-faint); letter-spacing:1px; text-transform:uppercase; }
+  .ns-info{ flex:1; }
+  .ns-info .t{ font-size:14px; font-weight:600; color:var(--text); }
+  .ns-info .s{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+  .ns-chip{
+    font-size:10.5px; font-weight:600; letter-spacing:0.5px;
+    padding:5px 9px; border-radius:20px;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .ns-chip.upcoming{ background: var(--teal-dim); color:var(--teal); }
+
+  /* ---------- LICH TAP ---------- */
+  .expiry-banner{
+    margin-top:14px;
+    display:flex; align-items:center; gap:12px;
+    background: linear-gradient(90deg, rgba(255,195,82,0.14), rgba(255,195,82,0.03));
+    border:1px solid rgba(255,195,82,0.3);
+    border-radius:14px;
+    padding:12px 14px;
+  }
+  .expiry-banner .ic{ font-size:18px; }
+  .expiry-banner .tx{ font-size:12.5px; color:var(--text); line-height:1.4; }
+  .expiry-banner .tx b{ color:var(--amber); }
+
+  .week-strip{
+    display:flex; justify-content:space-between;
+    margin-top:20px; margin-bottom:18px;
+  }
+  .wk-day{
+    width:38px; height:56px;
+    border-radius:12px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+    background:var(--card);
+    border:1px solid var(--line);
+  }
+  .wk-day .l{ font-size:10px; color:var(--text-faint); font-weight:600; }
+  .wk-day .n{ font-size:13px; color:var(--text-dim); font-family:'JetBrains Mono', monospace; }
+  .wk-day.done{ background: var(--teal-dim); border-color: rgba(46,209,176,0.4); }
+  .wk-day.done .n{ color:var(--teal); }
+  .wk-day.today{ background: var(--accent-dim); border-color: rgba(255,106,61,0.5); }
+  .wk-day.today .n{ color:var(--accent); font-weight:700; }
+
+  .session-item{
+    display:flex; align-items:center; gap:14px;
+    padding:14px;
+    border-radius:16px;
+    margin-bottom:10px;
+    border:1px solid var(--line);
+  }
+  .session-item.done{ background: rgba(46,209,176,0.06); }
+  .session-item.pending{ background: var(--card); }
+  .si-icon{
+    width:38px; height:38px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; flex-shrink:0;
+  }
+  .session-item.done .si-icon{ background: var(--teal-dim); color:var(--teal); }
+  .session-item.pending .si-icon{ background: rgba(255,255,255,0.05); color:var(--text-faint); }
+  .si-body{ flex:1; }
+  .si-title{ font-size:14px; font-weight:600; color:var(--text); }
+  .si-sub{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+  .si-status{
+    font-size:10.5px; font-weight:700; letter-spacing:0.4px;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .session-item.done .si-status{ color:var(--teal); }
+  .session-item.pending .si-status{ color:var(--text-faint); }
+
+  /* ---------- BAI TAP HOM NAY ---------- */
+  .workout-hero{
+    margin-top:14px;
+    position:relative;
+    background:
+      radial-gradient(120% 140% at 0% 0%, rgba(46,209,176,0.16), transparent 55%),
+      linear-gradient(165deg, var(--card-hi), var(--card));
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:20px;
+    display:flex; align-items:center; gap:18px;
+  }
+  .ring-wrap{
+    width:78px; height:78px; flex-shrink:0; position:relative;
+  }
+  .ring-wrap svg{ width:100%; height:100%; transform:rotate(-90deg); }
+  .ring-track{ fill:none; stroke:rgba(255,255,255,0.07); stroke-width:8; }
+  .ring-fill{ fill:none; stroke:var(--teal); stroke-width:8; stroke-linecap:round; transition: stroke-dashoffset 0.5s ease; }
+  .ring-label{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:'Oswald', sans-serif; font-size:17px; font-weight:600; color:var(--text);
+  }
+  .workout-hero-body{ flex:1; }
+  .workout-hero-body .wt{ font-size:14.5px; font-weight:600; color:var(--text); }
+  .workout-hero-body .ws{ font-size:12px; color:var(--text-dim); margin-top:3px; }
+  .workout-hero-body .wp{
+    margin-top:8px; display:inline-flex; align-items:center; gap:6px;
+    font-family:'JetBrains Mono', monospace; font-size:11.5px; font-weight:600;
+    color:var(--teal); background:var(--teal-dim); padding:4px 10px; border-radius:20px;
+  }
+
+  .milestone-strip{
+    display:flex; gap:10px;
+    margin-top:16px;
+  }
+  .milestone-chip{
+    flex:1;
+    background: var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px 8px;
+    text-align:center;
+    transition: background 0.3s ease, border-color 0.3s ease;
+  }
+  .milestone-chip .mi-pct{
+    font-family:'Oswald', sans-serif; font-size:16px; font-weight:600; color:var(--text-dim);
+  }
+  .milestone-chip .mi-lbl{
+    font-size:9.5px; color:var(--text-faint); margin-top:2px; letter-spacing:0.3px;
+  }
+  .milestone-chip .mi-pts{
+    font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--text-faint); margin-top:5px;
+  }
+  .milestone-chip.reached{
+    background: var(--amber-dim);
+    border-color: rgba(255,195,82,0.4);
+  }
+  .milestone-chip.reached .mi-pct{ color: var(--amber); }
+  .milestone-chip.reached .mi-pts{ color: var(--amber); font-weight:600; }
+  .milestone-chip.reached .mi-lbl{ color: var(--text-dim); }
+
+  .exercise-item{
+    display:flex; align-items:center; gap:14px;
+    padding:13px 14px;
+    border-radius:16px;
+    margin-bottom:9px;
+    border:1px solid var(--line);
+    background: var(--card);
+    cursor:pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+    user-select:none;
+  }
+  .exercise-item.checked{
+    background: rgba(46,209,176,0.06);
+    border-color: rgba(46,209,176,0.3);
+  }
+  .ex-check{
+    width:26px; height:26px; border-radius:8px; flex-shrink:0;
+    border:1.5px solid var(--text-faint);
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; color:transparent;
+    transition: all 0.2s ease;
+  }
+  .exercise-item.checked .ex-check{
+    background: var(--teal); border-color: var(--teal); color:#0B1220;
+  }
+  .ex-body{ flex:1; }
+  .ex-title{ font-size:13.5px; font-weight:600; color:var(--text); }
+  .exercise-item.checked .ex-title{ color:var(--text-dim); text-decoration: line-through; text-decoration-color: rgba(146,152,184,0.5); }
+  .ex-sub{ font-size:11.5px; color:var(--text-faint); margin-top:2px; }
+  .ex-icon{ font-size:17px; flex-shrink:0; opacity:0.9; }
+
+  .challenge-card{
+    display:flex; align-items:flex-start; gap:12px;
+    padding:14px;
+    border-radius:16px;
+    margin-bottom:10px;
+    border:1.5px solid var(--line);
+    background: var(--card);
+    cursor:pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+  .challenge-card.selected{
+    border-color: var(--accent);
+    background: linear-gradient(180deg, rgba(255,106,61,0.10), rgba(255,106,61,0.03));
+  }
+  .ch-radio{
+    width:20px; height:20px; border-radius:50%; flex-shrink:0; margin-top:1px;
+    border:1.5px solid var(--text-faint);
+    display:flex; align-items:center; justify-content:center;
+    transition: all 0.2s ease;
+  }
+  .ch-radio::after{
+    content:""; width:10px; height:10px; border-radius:50%; background:var(--accent);
+    transform: scale(0); transition: transform 0.15s ease;
+  }
+  .challenge-card.selected .ch-radio{ border-color: var(--accent); }
+  .challenge-card.selected .ch-radio::after{ transform: scale(1); }
+  .ch-body{ flex:1; }
+  .ch-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .ch-name{ font-size:13.5px; font-weight:600; color:var(--text); display:flex; align-items:center; gap:6px; }
+  .ch-pts{
+    font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:600;
+    color:var(--accent); background:var(--accent-dim); padding:3px 8px; border-radius:20px;
+    flex-shrink:0; white-space:nowrap;
+  }
+  .ch-desc{ font-size:11.5px; color:var(--text-dim); margin-top:4px; line-height:1.5; }
+
+  .finish-bar{
+    margin-top:22px;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .finish-summary{
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:12px; color:var(--text-dim);
+    padding:0 2px;
+  }
+  .finish-summary b{ color:var(--teal); font-family:'JetBrains Mono', monospace; }
+  .cta-finish{
+    width:100%;
+    border:none;
+    border-radius:16px;
+    padding:16px;
+    background: linear-gradient(135deg, var(--teal), #19A98A);
+    color:#0B1220;
+    font-family:'Oswald', sans-serif;
+    font-size:15.5px;
+    font-weight:600;
+    letter-spacing:0.8px;
+    cursor:pointer;
+    box-shadow: 0 12px 24px rgba(46,209,176,0.22);
+  }
+  .cta-finish:active{ transform: scale(0.98); }
+  .cta-finish[disabled]{ opacity:0.45; box-shadow:none; }
+
+  .workout-result{
+    width:100%;
+    margin-top:16px;
+    border-radius:18px;
+    padding:20px;
+    text-align:center;
+    display:none;
+    background: var(--amber-dim);
+    border:1px solid rgba(255,195,82,0.35);
+  }
+  .workout-result.show{ display:block; animation: pop 0.35s ease; }
+  .workout-result .rp-icon{ font-size:30px; }
+  .workout-result .rp-title{
+    font-family:'Oswald', sans-serif; font-size:18px; font-weight:600; color:var(--amber); margin-top:8px;
+  }
+  .workout-result .rp-sub{ font-size:12.5px; color:var(--text-dim); margin-top:6px; line-height:1.5; }
+  .workout-result .rp-points{
+    display:inline-block; margin-top:10px;
+    font-family:'JetBrains Mono', monospace; font-size:13px; font-weight:600; color:var(--amber);
+    background: rgba(255,195,82,0.14); padding:5px 12px; border-radius:20px;
+  }
+
+  /* ---------- CHECK-IN ---------- */
+  .checkin-wrap{
+    display:flex; flex-direction:column; align-items:center;
+    padding-top:10px;
+  }
+  .ci-sub{
+    font-size:13px; color:var(--text-dim); text-align:center;
+    margin-top:6px; margin-bottom:26px;
+    max-width:280px;
+    line-height:1.5;
+  }
+  .scan-frame{
+    width:250px; height:250px;
+    border-radius:28px;
+    position:relative;
+    background: radial-gradient(120% 120% at 50% 0%, rgba(255,106,61,0.10), transparent 60%), var(--card);
+    border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+  .corner{
+    position:absolute; width:26px; height:26px;
+    border-color: var(--accent);
+    border-style:solid;
+    border-width:0;
+  }
+  .corner.tl{ top:14px; left:14px; border-top-width:3px; border-left-width:3px; border-radius:8px 0 0 0;}
+  .corner.tr{ top:14px; right:14px; border-top-width:3px; border-right-width:3px; border-radius:0 8px 0 0;}
+  .corner.bl{ bottom:14px; left:14px; border-bottom-width:3px; border-left-width:3px; border-radius:0 0 0 8px;}
+  .corner.br{ bottom:14px; right:14px; border-bottom-width:3px; border-right-width:3px; border-radius:0 0 8px 0;}
+
+  .scan-line{
+    position:absolute; left:14px; right:14px; height:2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    top:14px;
+    animation: sweep 2.2s ease-in-out infinite;
+    box-shadow: 0 0 12px rgba(255,106,61,0.7);
+  }
+  @keyframes sweep{
+    0%{ top:20px; }
+    50%{ top:212px; }
+    100%{ top:20px; }
+  }
+
+  #qr-canvas{
+    image-rendering: pixelated;
+    filter: drop-shadow(0 0 18px rgba(255,255,255,0.05));
+  }
+
+  .code-refresh{
+    margin-top:20px;
+    display:flex; align-items:center; gap:8px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px; color:var(--text-faint);
+  }
+  .code-refresh b{ color:var(--accent); font-weight:600; min-width:34px; display:inline-block; text-align:center;}
+  .pulse-dot{
+    width:6px; height:6px; border-radius:50%; background:var(--teal);
+    animation: blink 1.4s ease-in-out infinite;
+  }
+  @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:0.25;} }
+
+  .cta-scan{
+    margin-top:26px;
+    width:100%;
+    border:none;
+    border-radius:16px;
+    padding:16px;
+    background: var(--accent);
+    color:#fff;
+    font-family:'Oswald', sans-serif;
+    font-size:15.5px;
+    font-weight:600;
+    letter-spacing:0.8px;
+    cursor:pointer;
+    box-shadow: 0 12px 24px rgba(255,106,61,0.28);
+  }
+  .cta-scan:active{ transform: scale(0.98); }
+  .cta-scan[disabled]{ opacity:0.5; }
+
+  .result-panel{
+    width:100%;
+    margin-top:22px;
+    border-radius:18px;
+    padding:20px;
+    text-align:center;
+    display:none;
+  }
+  .result-panel.show{ display:block; animation: pop 0.35s ease; }
+  @keyframes pop{ from{ opacity:0; transform: translateY(6px) scale(0.98);} to{opacity:1; transform:none;} }
+  .result-panel.success{
+    background: var(--teal-dim);
+    border:1px solid rgba(46,209,176,0.35);
+  }
+  .result-panel .rp-icon{ font-size:30px; }
+  .result-panel .rp-title{
+    font-family:'Oswald', sans-serif;
+    font-size:18px; font-weight:600; color:var(--teal); margin-top:8px;
+  }
+  .result-panel .rp-sub{
+    font-size:12.5px; color:var(--text-dim); margin-top:6px; line-height:1.5;
+  }
+  .rp-points{
+    display:inline-block; margin-top:10px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px; font-weight:600;
+    color:var(--teal);
+    background: rgba(46,209,176,0.12);
+    padding:5px 12px; border-radius:20px;
+  }
+
+  /* ---------- BOTTOM NAV ---------- */
+  .bottom-nav{
+    flex-shrink:0;
+    display:flex;
+    padding: 10px 10px calc(14px + env(safe-area-inset-bottom,0px));
+    background: linear-gradient(180deg, transparent, var(--ink) 30%);
+    border-top:1px solid var(--line);
+  }
+  .nav-btn{
+    flex:1;
+    display:flex; flex-direction:column; align-items:center; gap:5px;
+    background:none; border:none;
+    padding:8px 0 2px;
+    color: var(--text-faint);
+    cursor:pointer;
+    font-family:'Inter', sans-serif;
+  }
+  .nav-btn .ic{ font-size:18px; line-height:1; }
+  .nav-btn .lb{ font-size:10px; font-weight:600; letter-spacing:0.2px; }
+  .nav-btn.active{ color: var(--accent); }
+  .nav-btn.active .ic{ transform: translateY(-1px); }
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <div class="notch"></div>
+  <div class="statusbar">
+    <span>9:41</span>
+    <span>●●●● 5G 🔋</span>
+  </div>
+
+  <div class="screens">
+
+    <!-- ================= HOME ================= -->
+    <div class="screen active" id="screen-home">
+      <div class="home-header">
+        <div>
+          <div class="eyebrow">Chào buổi chiều</div>
+          <div class="greet-name">Xin chào, Minh</div>
+        </div>
+        <div class="avatar">M</div>
+      </div>
+
+      <div class="package-card">
+        <div class="pkg-top">
+          <div class="pkg-name">GÓI A</div>
+          <div class="pkg-tag">ĐANG HOẠT ĐỘNG</div>
+        </div>
+        <div class="pkg-schedule">
+          <span><b>3 buổi</b> / tuần</span>
+          <span class="dot"></span>
+          <span>T2 · T4 · T6</span>
+          <span class="dot"></span>
+          <span>16:30</span>
+        </div>
+        <div class="pkg-expiry">Hết hạn ngày <b>20/09/2026</b></div>
+
+        <div class="progress-row">
+          <div class="progress-labels">
+            <span>Đã tập 6 buổi</span>
+            <span>Còn lại 6 buổi</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill"></div></div>
+        </div>
+
+        <button class="cta-checkin" onclick="goTo('checkin')">
+          <span>📷</span> QR CHECK-IN
+        </button>
+        <button class="cta-secondary" onclick="goTo('workout')">
+          <span>💪</span> XEM BÀI TẬP HÔM NAY
+        </button>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-card points">
+          <div class="stat-icon">⭐</div>
+          <div class="num" id="home-points">350</div>
+          <div class="lbl">Điểm tích lũy</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🔥</div>
+          <div class="num">4</div>
+          <div class="lbl">Chuỗi buổi tập</div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <h1 class="page-title" style="font-size:16px; margin:0;">Buổi tập tiếp theo</h1>
+        <span class="see-all" onclick="goTo('schedule')" style="cursor:pointer;">Xem lịch →</span>
+      </div>
+
+      <div class="next-session">
+        <div class="ns-date"><div class="d">28</div><div class="m">Th8</div></div>
+        <div class="ns-info">
+          <div class="t">Buổi tập cùng HLV Tuấn</div>
+          <div class="s">Thứ Sáu · 16:30 – 17:30</div>
+        </div>
+        <div class="ns-chip upcoming">SẮP TỚI</div>
+      </div>
+    </div>
+
+    <!-- ================= LICH TAP ================= -->
+    <div class="screen" id="screen-schedule">
+      <div class="eyebrow">Học viên · Minh</div>
+      <h1 class="page-title">Lịch tập</h1>
+
+      <div class="expiry-banner">
+        <div class="ic">⏳</div>
+        <div class="tx">Gói <b>GÓI A</b> còn <b>6 buổi</b>, hết hạn <b>20/09/2026</b></div>
+      </div>
+
+      <div class="week-strip">
+        <div class="wk-day done"><span class="l">T2</span><span class="n">18</span></div>
+        <div class="wk-day"><span class="l">T3</span><span class="n">19</span></div>
+        <div class="wk-day done"><span class="l">T4</span><span class="n">20</span></div>
+        <div class="wk-day"><span class="l">T5</span><span class="n">21</span></div>
+        <div class="wk-day today"><span class="l">T6</span><span class="n">22</span></div>
+        <div class="wk-day"><span class="l">T7</span><span class="n">23</span></div>
+        <div class="wk-day"><span class="l">CN</span><span class="n">24</span></div>
+      </div>
+
+      <div class="section-head" style="margin-top:6px;">
+        <h1 class="page-title" style="font-size:15px; margin:0;">Buổi tập trong tuần</h1>
+      </div>
+
+      <div class="session-item done">
+        <div class="si-icon">✓</div>
+        <div class="si-body">
+          <div class="si-title">Thứ Hai · 18/08</div>
+          <div class="si-sub">16:30 – 17:30 · HLV Tuấn</div>
+        </div>
+        <div class="si-status">ĐÃ TẬP</div>
+      </div>
+
+      <div class="session-item done">
+        <div class="si-icon">✓</div>
+        <div class="si-body">
+          <div class="si-title">Thứ Tư · 20/08</div>
+          <div class="si-sub">16:30 – 17:30 · HLV Tuấn</div>
+        </div>
+        <div class="si-status">ĐÃ TẬP</div>
+      </div>
+
+      <div class="session-item pending">
+        <div class="si-icon">⏱</div>
+        <div class="si-body">
+          <div class="si-title">Thứ Sáu · 22/08 · Hôm nay</div>
+          <div class="si-sub">16:30 – 17:30 · HLV Tuấn</div>
+        </div>
+        <div class="si-status">CHƯA TẬP</div>
+      </div>
+
+      <div class="session-item pending" style="opacity:0.6;">
+        <div class="si-icon">—</div>
+        <div class="si-body">
+          <div class="si-title">Thứ Hai · 25/08</div>
+          <div class="si-sub">16:30 – 17:30 · HLV Tuấn</div>
+        </div>
+        <div class="si-status">SẮP TỚI</div>
+      </div>
+    </div>
+
+    <!-- ================= BAI TAP HOM NAY ================= -->
+    <div class="screen" id="screen-workout">
+      <div class="eyebrow">Buổi tập · 16:30 – 17:30 · HLV Tuấn</div>
+      <h1 class="page-title">Bài tập hôm nay</h1>
+
+      <div class="workout-hero">
+        <div class="ring-wrap">
+          <svg viewBox="0 0 80 80">
+            <circle class="ring-track" cx="40" cy="40" r="34"></circle>
+            <circle class="ring-fill" id="ring-fill" cx="40" cy="40" r="34"
+              stroke-dasharray="213.6" stroke-dashoffset="213.6"></circle>
+          </svg>
+          <div class="ring-label" id="ring-label">0%</div>
+        </div>
+        <div class="workout-hero-body">
+          <div class="wt">Buổi Chân &amp; Core</div>
+          <div class="ws" id="ex-count-text">Đã hoàn thành 0/8 bài tập</div>
+          <div class="wp"><span>⭐</span> <span id="pending-points">0</span> điểm sẽ nhận</div>
+        </div>
+      </div>
+
+      <div class="milestone-strip" id="milestone-strip">
+        <div class="milestone-chip" data-target="50">
+          <div class="mi-pct">50%</div>
+          <div class="mi-lbl">Hoàn thành</div>
+          <div class="mi-pts">+10đ</div>
+        </div>
+        <div class="milestone-chip" data-target="80">
+          <div class="mi-pct">80%</div>
+          <div class="mi-lbl">Hoàn thành</div>
+          <div class="mi-pts">+30đ</div>
+        </div>
+        <div class="milestone-chip" data-target="100">
+          <div class="mi-pct">100%</div>
+          <div class="mi-lbl">Hoàn thành</div>
+          <div class="mi-pts">+50đ</div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <h1 class="page-title" style="font-size:15px; margin:0;">Danh sách bài tập</h1>
+        <span class="see-all" id="ex-count-mini">0/8</span>
+      </div>
+
+      <div id="exercise-list">
+        <!-- exercise items injected by JS -->
+      </div>
+
+      <div class="section-head">
+        <h1 class="page-title" style="font-size:15px; margin:0;">Chọn thử thách hôm nay</h1>
+      </div>
+      <div class="eyebrow" style="text-transform:none; letter-spacing:0.2px; margin-bottom:12px;">Chọn 1 thử thách để nhận thêm điểm thưởng khi hoàn tất buổi tập</div>
+
+      <div id="challenge-list">
+        <!-- challenge cards injected by JS -->
+      </div>
+
+      <div class="finish-bar">
+        <div class="finish-summary">
+          <span>Tổng điểm dự kiến</span>
+          <b id="finish-points-preview">0 điểm</b>
+        </div>
+        <button class="cta-finish" id="finish-btn" onclick="finishWorkout()">HOÀN TẤT BUỔI TẬP</button>
+      </div>
+
+      <div class="workout-result" id="workout-result">
+        <div class="rp-icon">🏆</div>
+        <div class="rp-title">Đã hoàn tất buổi tập!</div>
+        <div class="rp-sub" id="workout-result-sub">Bạn đã hoàn thành 8/8 bài tập cùng thử thách đã chọn.</div>
+        <div class="rp-points" id="workout-result-points">+90 điểm</div>
+      </div>
+    </div>
+
+    <!-- ================= CHECK-IN ================= -->
+    <div class="screen" id="screen-checkin">
+      <div class="checkin-wrap">
+        <div class="eyebrow" style="margin-top:6px;">Buổi tập · 16:30 – 17:30</div>
+        <h1 class="page-title" style="font-size:20px;">Quét mã tại quầy</h1>
+        <p class="ci-sub">Đưa camera hướng vào mã QR hiển thị tại quầy hoặc màn hình phòng tập để check-in.</p>
+
+        <div class="scan-frame">
+          <canvas id="qr-canvas" width="150" height="150"></canvas>
+          <div class="scan-line"></div>
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
+        </div>
+
+        <div class="code-refresh">
+          <span class="pulse-dot"></span>
+          Mã tự làm mới sau <b id="countdown">30</b>s
+        </div>
+
+        <button class="cta-scan" id="scan-btn" onclick="simulateCheckin()">XÁC NHẬN CHECK-IN</button>
+
+        <div class="result-panel success" id="result-panel">
+          <div class="rp-icon">✅</div>
+          <div class="rp-title">Check-in thành công</div>
+          <div class="rp-sub" id="result-time">Đã ghi nhận buổi tập lúc 16:32, Thứ Sáu 22/08</div>
+          <div class="rp-points">+20 điểm thưởng</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-btn active" data-screen="home" onclick="goTo('home')">
+      <span class="ic">🏠</span><span class="lb">Trang chủ</span>
+    </button>
+    <button class="nav-btn" data-screen="schedule" onclick="goTo('schedule')">
+      <span class="ic">📅</span><span class="lb">Lịch tập</span>
+    </button>
+    <button class="nav-btn" data-screen="workout" onclick="goTo('workout')">
+      <span class="ic">💪</span><span class="lb">Bài tập</span>
+    </button>
+    <button class="nav-btn" data-screen="checkin" onclick="goTo('checkin')">
+      <span class="ic">📷</span><span class="lb">Check-in</span>
+    </button>
+  </div>
+</div>
+
+<script>
+  function goTo(name){
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + name).classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.nav-btn[data-screen="' + name + '"]').classList.add('active');
+    if(name === 'checkin'){
+      resetCheckinUI();
+    }
+  }
+
+  /* ---- fake rotating QR render (visual only) ---- */
+  function drawQR(seedText){
+    const canvas = document.getElementById('qr-canvas');
+    const ctx = canvas.getContext('2d');
+    const grid = 15;
+    const cell = canvas.width / grid;
+    ctx.fillStyle = '#12162A';
+    ctx.fillRect(0,0,canvas.width, canvas.height);
+
+    let h = 0;
+    for(let i=0;i<seedText.length;i++){ h = (h * 31 + seedText.charCodeAt(i)) >>> 0; }
+    function rnd(){ h = (h * 1103515245 + 12345) >>> 0; return (h >>> 8) / 16777216; }
+
+    ctx.fillStyle = '#ECEDF3';
+    for(let y=0;y<grid;y++){
+      for(let x=0;x<grid;x++){
+        const isFinder = (x<4 && y<4) || (x>grid-5 && y<4) || (x<4 && y>grid-5);
+        if(isFinder) continue;
+        if(rnd() > 0.56){
+          ctx.fillRect(x*cell, y*cell, cell-1.5, cell-1.5);
+        }
+      }
+    }
+    [[0,0],[grid-4,0],[0,grid-4]].forEach(([fx,fy])=>{
+      ctx.fillStyle = '#ECEDF3';
+      ctx.fillRect(fx*cell, fy*cell, cell*4-2, cell*4-2);
+      ctx.fillStyle = '#12162A';
+      ctx.fillRect(fx*cell+cell*0.8, fy*cell+cell*0.8, cell*2.4, cell*2.4);
+      ctx.fillStyle = '#ECEDF3';
+      ctx.fillRect(fx*cell+cell*1.4, fy*cell+cell*1.4, cell*1.2, cell*1.2);
+    });
+  }
+
+  let countdownVal = 30;
+  let countdownTimer = null;
+
+  function tickCountdown(){
+    countdownVal -= 1;
+    if(countdownVal <= 0){
+      countdownVal = 30;
+      drawQR('otp-seed-' + Date.now());
+    }
+    document.getElementById('countdown').textContent = countdownVal;
+  }
+
+  function resetCheckinUI(){
+    document.getElementById('result-panel').classList.remove('show');
+    document.getElementById('scan-btn').removeAttribute('disabled');
+    document.getElementById('scan-btn').textContent = 'XÁC NHẬN CHECK-IN';
+  }
+
+  function simulateCheckin(){
+    const btn = document.getElementById('scan-btn');
+    btn.setAttribute('disabled', 'true');
+    btn.textContent = 'ĐANG XÁC THỰC...';
+    setTimeout(()=>{
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2,'0');
+      const mm = String(now.getMinutes()).padStart(2,'0');
+      document.getElementById('result-time').textContent =
+        'Đã ghi nhận buổi tập lúc ' + hh + ':' + mm + ', Thứ Sáu 22/08';
+      document.getElementById('result-panel').classList.add('show');
+      btn.textContent = 'ĐÃ CHECK-IN';
+    }, 900);
+  }
+
+  /* ================= BAI TAP HOM NAY ================= */
+
+  const EXERCISES = [
+    { id:'e1', icon:'🦵', name:'Squat tạ', sub:'4 hiệp × 12 lần' },
+    { id:'e2', icon:'🏃', name:'Lunge bước dài', sub:'3 hiệp × 10 lần / bên' },
+    { id:'e3', icon:'🧎', name:'Hip thrust', sub:'4 hiệp × 15 lần' },
+    { id:'e4', icon:'🪢', name:'Plank giữ core', sub:'3 hiệp × 45 giây' },
+    { id:'e5', icon:'🔁', name:'Mountain climber', sub:'3 hiệp × 30 giây' },
+    { id:'e6', icon:'🧘', name:'Glute bridge', sub:'3 hiệp × 15 lần' },
+    { id:'e7', icon:'🪑', name:'Wall sit', sub:'3 hiệp × 40 giây' },
+    { id:'e8', icon:'🌀', name:'Giãn cơ kết thúc', sub:'5 phút cooldown' },
+  ];
+
+  const CHALLENGES = [
+    { id:'c1', name:'Không nghỉ giữa hiệp', icon:'⚡', desc:'Hoàn thành toàn bộ bài tập với thời gian nghỉ dưới 30 giây giữa mỗi hiệp.', pts:15 },
+    { id:'c2', name:'Tăng mức tạ', icon:'🏋️', desc:'Tăng thêm 2.5kg so với buổi trước cho các bài squat và hip thrust.', pts:15 },
+    { id:'c3', name:'Giữ nhịp tim vùng đốt mỡ', icon:'❤️', desc:'Duy trì nhịp tim trong vùng 70–80% suốt buổi tập (theo dõi qua đồng hồ).', pts:20 },
+  ];
+
+  const MILESTONES = [50, 80, 100];
+  const MILESTONE_POINTS = { 50:10, 80:30, 100:50 };
+  const COMPLETION_BASE_POINTS = 5; // points per finished exercise
+
+  let checkedExercises = new Set();
+  let selectedChallenge = null;
+  let workoutFinished = false;
+  let currentPoints = 350;
+
+  function renderExerciseList(){
+    const wrap = document.getElementById('exercise-list');
+    wrap.innerHTML = EXERCISES.map(ex => `
+      <div class="exercise-item" id="item-${ex.id}" onclick="toggleExercise('${ex.id}')">
+        <div class="ex-check">✓</div>
+        <div class="ex-icon">${ex.icon}</div>
+        <div class="ex-body">
+          <div class="ex-title">${ex.name}</div>
+          <div class="ex-sub">${ex.sub}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderChallengeList(){
+    const wrap = document.getElementById('challenge-list');
+    wrap.innerHTML = CHALLENGES.map(ch => `
+      <div class="challenge-card" id="chal-${ch.id}" onclick="selectChallenge('${ch.id}')">
+        <div class="ch-radio"></div>
+        <div class="ch-body">
+          <div class="ch-top">
+            <div class="ch-name">${ch.icon} ${ch.name}</div>
+            <div class="ch-pts">+${ch.pts}đ</div>
+          </div>
+          <div class="ch-desc">${ch.desc}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function toggleExercise(id){
+    if(workoutFinished) return;
+    if(checkedExercises.has(id)){
+      checkedExercises.delete(id);
+    } else {
+      checkedExercises.add(id);
+    }
+    document.getElementById('item-' + id).classList.toggle('checked');
+    updateWorkoutProgress();
+  }
+
+  function selectChallenge(id){
+    if(workoutFinished) return;
+    selectedChallenge = (selectedChallenge === id) ? null : id;
+    document.querySelectorAll('.challenge-card').forEach(c => c.classList.remove('selected'));
+    if(selectedChallenge){
+      document.getElementById('chal-' + selectedChallenge).classList.add('selected');
+    }
+    updateWorkoutProgress();
+  }
+
+  function currentMilestoneBonus(pct){
+    let bonus = 0;
+    MILESTONES.forEach(m => { if(pct >= m) bonus += MILESTONE_POINTS[m]; });
+    return bonus;
+  }
+
+  function updateWorkoutProgress(){
+    const done = checkedExercises.size;
+    const total = EXERCISES.length;
+    const pct = Math.round((done/total)*100);
+
+    // ring
+    const circumference = 213.6;
+    const offset = circumference - (circumference * pct/100);
+    document.getElementById('ring-fill').style.strokeDashoffset = offset;
+    document.getElementById('ring-label').textContent = pct + '%';
+
+    // texts
+    document.getElementById('ex-count-text').textContent = `Đã hoàn thành ${done}/${total} bài tập`;
+    document.getElementById('ex-count-mini').textContent = `${done}/${total}`;
+
+    // milestone chips
+    document.querySelectorAll('.milestone-chip').forEach(chip => {
+      const target = parseInt(chip.getAttribute('data-target'), 10);
+      chip.classList.toggle('reached', pct >= target);
+    });
+
+    // points math
+    const exercisePoints = done * COMPLETION_BASE_POINTS;
+    const milestoneBonus = currentMilestoneBonus(pct);
+    const challengeBonus = selectedChallenge ? CHALLENGES.find(c=>c.id===selectedChallenge).pts : 0;
+    const total_pending = exercisePoints + milestoneBonus + challengeBonus;
+
+    document.getElementById('pending-points').textContent = total_pending;
+    document.getElementById('finish-points-preview').textContent = total_pending + ' điểm';
+
+    const finishBtn = document.getElementById('finish-btn');
+    finishBtn.disabled = done === 0;
+
+    return { done, total, pct, exercisePoints, milestoneBonus, challengeBonus, total_pending };
+  }
+
+  function finishWorkout(){
+    if(workoutFinished) return;
+    const stats = updateWorkoutProgress();
+    if(stats.done === 0) return;
+
+    workoutFinished = true;
+    document.getElementById('finish-btn').setAttribute('disabled','true');
+    document.getElementById('finish-btn').textContent = 'ĐÃ HOÀN TẤT';
+
+    currentPoints += stats.total_pending;
+    document.getElementById('home-points').textContent = currentPoints;
+
+    let subText = `Bạn đã hoàn thành ${stats.done}/${stats.total} bài tập (${stats.pct}%).`;
+    if(stats.milestoneBonus > 0){
+      subText += ` Đạt mốc thưởng +${stats.milestoneBonus}đ.`;
+    }
+    if(selectedChallenge){
+      subText += ` Hoàn thành thử thách "${CHALLENGES.find(c=>c.id===selectedChallenge).name}".`;
+    }
+    document.getElementById('workout-result-sub').textContent = subText;
+    document.getElementById('workout-result-points').textContent = '+' + stats.total_pending + ' điểm';
+    document.getElementById('workout-result').classList.add('show');
+  }
+
+  // init
+  renderExerciseList();
+  renderChallengeList();
+  updateWorkoutProgress();
+  drawQR('otp-seed-init');
+  countdownTimer = setInterval(tickCountdown, 1000);
+</script>
+
+</body>
+</html>
