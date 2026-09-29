@@ -66,7 +66,15 @@ class ScheduledClass {
 
 class AppState extends ChangeNotifier {
   int dpBalance = 350;
-  int availableMarks = 350;
+  int marksBalance = 350;
+
+  /// UC15: Marks are frozen (kept, not spendable) while the package is expired.
+  bool marksFrozen = false;
+  int get availableMarks => marksFrozen ? 0 : marksBalance;
+
+  /// Set by the membership/lifecycle module (lib/app/repositories.dart).
+  void Function()? onCheckedIn;
+  void Function()? onSessionCompleted;
   int remainingSessions = 6;
   bool todayCheckedIn = false;
   int activeMemberCount = 124;
@@ -161,6 +169,7 @@ class AppState extends ChangeNotifier {
     todayCheckedIn = true;
     remainingSessions -= 1;
     todaySession.status = 'Waiting for coach confirmation';
+    onCheckedIn?.call();
     sessions[0] = TrainingSession(
       date: todaySession.date,
       type: todaySession.type,
@@ -176,7 +185,7 @@ class AppState extends ChangeNotifier {
 
   void addManualAdjustment(int amount, String reason) {
     dpBalance += amount;
-    availableMarks += amount;
+    marksBalance += amount;
     pointTransactions.insert(
       0,
       PointEntry(
@@ -263,7 +272,7 @@ class AppState extends ChangeNotifier {
 
   void redeemReward(int cost) {
     if (cost > availableMarks) return;
-    availableMarks -= cost;
+    marksBalance -= cost;
     notifyListeners();
   }
 
@@ -282,7 +291,7 @@ class AppState extends ChangeNotifier {
     final amount =
         completionPercent >= completionThreshold ? sessionDpWeight : 0;
     dpBalance += amount;
-    availableMarks += amount;
+    marksBalance += amount;
     todaySession.completionPercent = completionPercent;
     todaySession.dpEarned = amount;
     todaySession.status = completionPercent >= completionThreshold
@@ -299,7 +308,11 @@ class AppState extends ChangeNotifier {
       ),
     );
     notifyListeners();
+    if (amount > 0) onSessionCompleted?.call();
   }
+
+  /// Lets repositories that change shared balances repaint the screens.
+  void refresh() => notifyListeners();
 }
 
 final appState = AppState();

@@ -13,5 +13,7 @@ void main() {
   testWidgets('opens HVP Boxing splash screen', (WidgetTester tester) async {
     await tester.pumpWidget(const HvpApp());
     expect(find.text('HVP BOXING'), findsOneWidget);
+    // Let the splash timer fire so no timer is pending at the end.
+    await tester.pump(const Duration(seconds: 1));
   });
 }

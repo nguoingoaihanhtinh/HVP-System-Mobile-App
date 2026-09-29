@@ -8,6 +8,7 @@ dependencies:
   flutter:
     sdk: flutter
   google_fonts: ^6.2.1
+  uuid: ^4.6.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

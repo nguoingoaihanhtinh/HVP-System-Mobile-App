@@ -3,9 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../app/app_state.dart';
+import '../../app/repositories.dart';
+import '../../core/clock.dart';
 import '../../data/mock_data.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/account_status_banner.dart';
+import '../../widgets/restricted_action.dart';
 import '../../widgets/shared_widgets.dart';
+import '../membership/membership_card.dart';
 
 class HomeShell extends StatefulWidget {
   final ValueChanged<BuildContext> onSwitchRole;
@@ -142,18 +147,8 @@ class DashboardScreen extends StatelessWidget {
                     color: AppColors.text))
           ]),
           const SizedBox(height: 24),
-          Panel(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                const Text('Membership Card',
-                    style:
-                        TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Text(
-                    'Gói A · ACTIVE · hết hạn 20/09/2026\n${appState.remainingSessions} buổi còn lại · HVP Boxing Quận 7',
-                    style: const TextStyle(color: AppColors.dim, height: 1.5)),
-              ])),
+          const AccountStatusBanner(),
+          const MembershipCardSummary(),
           Panel(
               child: ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -462,8 +457,9 @@ class _CheckinScreenState extends State<CheckinScreen> {
           style: const TextStyle(color: AppColors.faint)),
       const SizedBox(height: 22),
       FilledButton(
-          onPressed:
-              loading || success || appState.todayCheckedIn ? null : verify,
+          onPressed: loading || success || appState.todayCheckedIn
+              ? null
+              : () => RestrictedAction.guard(context, verify),
           child: Text(loading
               ? 'ĐANG XÁC THỰC...'
               : success || appState.todayCheckedIn
@@ -609,11 +605,7 @@ class ProfileScreen extends StatelessWidget {
         Text('student@hvp.demo', style: TextStyle(color: AppColors.dim)),
       ])),
       const SizedBox(height: 12),
-      const Panel(
-          child: ListTile(
-              leading: Icon(Icons.card_membership_outlined),
-              title: Text('Gói A'),
-              subtitle: Text('ACTIVE · HVP Boxing Quận 7'))),
+      const MembershipCardSummary(compact: true),
       OutlinedButton(
         onPressed: () => onSwitchRole(context),
         child: const Text('ĐỔI ROLE DEMO'),
@@ -697,6 +689,15 @@ class NotificationsScreen extends StatelessWidget {
     return Scaffold(
         appBar: AppBar(title: const Text('Thông báo')),
         body: ListView(padding: const EdgeInsets.all(20), children: [
+          for (final item in Repositories.membership
+              .notificationsFor(Repositories.currentMemberId))
+            Panel(
+                child: ListTile(
+                    leading: const Icon(Icons.notifications_active_outlined,
+                        color: AppColors.accent),
+                    title: Text(item.title,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text('${item.body}\n${dmy(item.createdAt)}'))),
           for (final notice in notices)
             Panel(
                 child: ListTile(
@@ -837,6 +838,7 @@ class ArmoryScreen extends StatelessWidget {
           const Text('Đổi thưởng',
               style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
           const SizedBox(height: 14),
+          const AccountStatusBanner(),
           Panel(
               child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

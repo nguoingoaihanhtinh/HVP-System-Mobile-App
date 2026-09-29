@@ -4,6 +4,7 @@ import '../../app/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/shared_widgets.dart';
 import '../shared/member_page.dart';
+import 'renewal_queue_screen.dart';
 
 class StaffShell extends StatefulWidget {
   final ValueChanged<BuildContext> onSwitchRole;
@@ -23,13 +24,15 @@ class _StaffShellState extends State<StaffShell> {
       'Staff Operations',
       'Coach Session Review',
       'Members',
-      'DP Ledger'
+      'DP Ledger',
+      'Gia hạn gói'
     ];
     final screens = <Widget>[
       const StaffDashboardScreen(),
       const CoachSessionReviewScreen(),
       const MembersScreen(),
       const StaffLedgerScreen(),
+      const RenewalQueueScreen(),
     ];
     return Scaffold(
       appBar: AppBar(
@@ -55,6 +58,8 @@ class _StaffShellState extends State<StaffShell> {
               icon: Icon(Icons.group_outlined), label: 'Members'),
           NavigationDestination(
               icon: Icon(Icons.receipt_long_outlined), label: 'Ledger'),
+          NavigationDestination(
+              icon: Icon(Icons.autorenew), label: 'Gia hạn'),
         ],
       ),
     );

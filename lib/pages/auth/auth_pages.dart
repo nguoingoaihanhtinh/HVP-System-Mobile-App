@@ -2,7 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../app/repositories.dart';
+import '../../core/messages.dart';
+import '../../core/result.dart';
+import '../../data/mock/mock_db.dart';
+import '../../data/models/member.dart';
+import '../../data/repositories/auth_repository.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/busy_button.dart';
 import '../../widgets/shared_widgets.dart';
 import '../admin/admin_pages.dart';
 import '../staff/staff_pages.dart';
@@ -48,35 +55,58 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
+/// Clears the stack and opens Login, e.g. after sign-up (MSG4) or a
+/// password reset (MSG14).
+void openLogin(BuildContext context, {String? email, Msg? notice}) {
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(
+        builder: (_) => LoginScreen(prefillEmail: email, notice: notice)),
+    (_) => false,
+  );
+}
+
+/// UC2 Login.
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final String? prefillEmail;
+  final Msg? notice;
+
+  const LoginScreen({super.key, this.prefillEmail, this.notice});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final emailController = TextEditingController();
+  late final emailController = TextEditingController(text: widget.prefillEmail);
   final passwordController = TextEditingController();
   String? error;
 
-  void login() {
-    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
-      setState(
-          () => error = 'MSG5 · Vui lòng nhập email/username và mật khẩu.');
-      return;
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> login() async {
+    final result = await Repositories.auth
+        .login(emailController.text, passwordController.text);
+    if (!mounted) return;
+    switch (result) {
+      case Err(:final message):
+        setState(() => error = message.display);
+      case Ok(:final value, :final message):
+        setState(() => error = null);
+        final member = Repositories.membership.member(value.user.id);
+        showMessage(
+            context,
+            member?.status == MemberStatus.inactive
+                ? Msgs.viewOnly.display
+                : message!.display);
+        Navigator.pushReplacement(context,
+            MaterialPageRoute(builder: (_) => const RoleSelectionScreen()));
     }
-    final email = emailController.text.trim();
-    if (email != 'minh' &&
-        email != 'student@hvp.demo' &&
-        email != 'admin@hvp.demo' &&
-        email != 'coach@hvp.demo') {
-      setState(
-          () => error = 'MSG6 · Đăng nhập thất bại. Sai email hoặc mật khẩu.');
-      return;
-    }
-    Navigator.pushReplacement(context,
-        MaterialPageRoute(builder: (_) => const RoleSelectionScreen()));
   }
 
   @override
@@ -85,14 +115,22 @@ class _LoginScreenState extends State<LoginScreen> {
       title: 'Chào mừng trở lại',
       subtitle: 'Đăng nhập để tiếp tục hành trình của bạn',
       children: [
+        if (widget.notice != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text(widget.notice!.display,
+                style: const TextStyle(color: AppColors.teal)),
+          ),
         TextField(
           controller: emailController,
+          keyboardType: TextInputType.emailAddress,
           decoration: const InputDecoration(labelText: 'Email hoặc username'),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: passwordController,
           obscureText: true,
+          onSubmitted: (_) => login(),
           decoration: const InputDecoration(labelText: 'Mật khẩu'),
         ),
         if (error != null)
@@ -109,12 +147,18 @@ class _LoginScreenState extends State<LoginScreen> {
             child: const Text('Quên mật khẩu?'),
           ),
         ),
-        FilledButton(onPressed: login, child: const Text('ĐĂNG NHẬP')),
+        BusyButton(label: 'ĐĂNG NHẬP', onPressed: login),
         TextButton(
           onPressed: () => Navigator.push(
               context, MaterialPageRoute(builder: (_) => const SignupScreen())),
           child: const Text('Chưa có tài khoản? Đăng ký'),
         ),
+        const SizedBox(height: 8),
+        const Text(
+            'Demo: minh · reception@hvp.demo · admin@hvp.demo · coach@hvp.demo\n'
+            'Mật khẩu: ${MockDb.demoPassword}',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.faint, fontSize: 12)),
       ],
     );
   }
@@ -125,9 +169,12 @@ class RoleSelectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = Repositories.auth.currentSession?.user;
     return AuthLayout(
       title: 'Chọn giao diện demo',
-      subtitle: 'Role Selection chỉ phục vụ prototype UI.',
+      subtitle: user == null
+          ? 'Role Selection chỉ phục vụ prototype UI.'
+          : 'Đăng nhập: ${user.fullName} · Role Selection chỉ phục vụ prototype UI.',
       children: [
         FilledButton.icon(
           onPressed: () => Navigator.pushReplacement(
@@ -155,12 +202,16 @@ class RoleSelectionScreen extends StatelessWidget {
                   builder: (_) =>
                       StaffShell(onSwitchRole: _openRoleSelection))),
           icon: const Icon(Icons.support_agent_outlined),
-          label: const Text('STAFF / COACH'),
+          label: const Text('STAFF / COACH / LỄ TÂN'),
         ),
-        const SizedBox(height: 20),
-        const Text('student@hvp.demo  ·  admin@hvp.demo  ·  coach@hvp.demo',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.faint, fontSize: 12)),
+        const SizedBox(height: 12),
+        TextButton(
+          onPressed: () async {
+            await Repositories.auth.logout();
+            if (context.mounted) openLogin(context);
+          },
+          child: const Text('Đăng xuất'),
+        ),
       ],
     );
   }
@@ -209,54 +260,217 @@ class AuthLayout extends StatelessWidget {
   }
 }
 
-class SignupScreen extends StatelessWidget {
+/// UC1 Sign up.
+class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
 
   @override
+  State<SignupScreen> createState() => _SignupScreenState();
+}
+
+class _SignupScreenState extends State<SignupScreen> {
+  final name = TextEditingController();
+  final email = TextEditingController();
+  final phone = TextEditingController();
+  final address = TextEditingController();
+  final password = TextEditingController();
+  final confirm = TextEditingController();
+  String? error;
+
+  @override
+  void dispose() {
+    for (final controller in [name, email, phone, address, password, confirm]) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> submit() async {
+    final result = await Repositories.auth.signUp(SignUpData(
+      fullName: name.text,
+      email: email.text,
+      phone: phone.text,
+      address: address.text,
+      password: password.text,
+      confirmPassword: confirm.text,
+    ));
+    if (!mounted) return;
+    switch (result) {
+      case Err(:final message):
+        setState(() => error = message.display);
+      case Ok(:final value, :final message):
+        showMessage(context, message!.display);
+        openLogin(context, email: value.email, notice: Msgs.redirectLogin);
+    }
+  }
+
+  Widget _field(TextEditingController controller, String label,
+          {bool obscure = false, TextInputType? type}) =>
+      Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: TextField(
+          controller: controller,
+          obscureText: obscure,
+          keyboardType: type,
+          decoration: InputDecoration(labelText: label),
+        ),
+      );
+
+  @override
   Widget build(BuildContext context) {
-    const fields = [
-      'Họ và tên',
-      'Email',
-      'Số điện thoại',
-      'Địa chỉ',
-      'Mật khẩu',
-      'Xác nhận mật khẩu'
-    ];
     return AuthLayout(
       title: 'Tạo tài khoản',
       subtitle: 'Bắt đầu xây dựng phiên bản mạnh mẽ hơn',
       children: [
-        for (final field in fields)
+        _field(name, 'Họ và tên'),
+        _field(email, 'Email', type: TextInputType.emailAddress),
+        _field(phone, 'Số điện thoại', type: TextInputType.phone),
+        _field(address, 'Địa chỉ (không bắt buộc)'),
+        _field(password, 'Mật khẩu (≥ 8 ký tự, có chữ và số)', obscure: true),
+        _field(confirm, 'Xác nhận mật khẩu', obscure: true),
+        if (error != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: TextField(decoration: InputDecoration(labelText: field)),
+            child: Text(error!, style: const TextStyle(color: AppColors.accent)),
           ),
-        FilledButton(
-          onPressed: () =>
-              showMessage(context, 'MSG3 · Tài khoản đã được tạo thành công!'),
-          child: const Text('ĐĂNG KÝ'),
+        BusyButton(label: 'ĐĂNG KÝ', onPressed: submit),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Đã có tài khoản? Đăng nhập'),
         ),
       ],
     );
   }
 }
 
-class ForgotScreen extends StatelessWidget {
+/// UC3 Forgot password: phone → PIN → new password.
+class ForgotScreen extends StatefulWidget {
   const ForgotScreen({super.key});
 
   @override
+  State<ForgotScreen> createState() => _ForgotScreenState();
+}
+
+class _ForgotScreenState extends State<ForgotScreen> {
+  final phone = TextEditingController();
+  final pin = TextEditingController();
+  final password = TextEditingController();
+  final confirm = TextEditingController();
+  PinChallenge? challenge;
+  String? resetToken;
+  String? error;
+
+  @override
+  void dispose() {
+    for (final controller in [phone, pin, password, confirm]) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> sendPin() async {
+    final result = await Repositories.auth.requestPasswordReset(phone.text);
+    if (!mounted) return;
+    switch (result) {
+      case Err(:final message):
+        setState(() => error = message.display);
+      case Ok(:final value, :final message):
+        setState(() {
+          challenge = value;
+          error = null;
+        });
+        // Mock only: there is no SMS gateway, so show the PIN.
+        showMessage(context,
+            '${message!.display}${value.debugPin == null ? '' : ' (PIN demo: ${value.debugPin})'}');
+    }
+  }
+
+  Future<void> verifyPin() async {
+    final result =
+        await Repositories.auth.verifyPin(challenge!.requestId, pin.text);
+    if (!mounted) return;
+    switch (result) {
+      case Err(:final message):
+        setState(() => error = message.display);
+      case Ok(:final value):
+        setState(() {
+          resetToken = value;
+          error = null;
+        });
+    }
+  }
+
+  Future<void> resetPassword() async {
+    final result = await Repositories.auth
+        .resetPassword(resetToken!, password.text, confirm.text);
+    if (!mounted) return;
+    switch (result) {
+      case Err(:final message):
+        setState(() => error = message.display);
+      case Ok(:final message):
+        showMessage(context, message!.display);
+        openLogin(context, notice: Msgs.redirectLoginNewPassword);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final step = resetToken != null ? 2 : (challenge != null ? 1 : 0);
+    final subtitle = switch (step) {
+      0 => 'Nhập số điện thoại để nhận mã PIN',
+      1 => 'Nhập mã PIN đã gửi tới ${challenge!.maskedPhone}',
+      _ => 'Tạo mật khẩu mới',
+    };
     return AuthLayout(
       title: 'Khôi phục mật khẩu',
-      subtitle: 'Nhập số điện thoại để nhận mã PIN',
+      subtitle: subtitle,
       children: [
-        const TextField(
-            decoration: InputDecoration(labelText: 'Số điện thoại')),
+        if (step == 0) ...[
+          TextField(
+              controller: phone,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(labelText: 'Số điện thoại')),
+        ] else if (step == 1) ...[
+          TextField(
+              controller: pin,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              decoration: const InputDecoration(labelText: 'Mã PIN (6 số)')),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+                onPressed: sendPin, child: const Text('Gửi lại mã PIN')),
+          ),
+        ] else ...[
+          TextField(
+              controller: password,
+              obscureText: true,
+              decoration: const InputDecoration(
+                  labelText: 'Mật khẩu mới (≥ 8 ký tự, có chữ và số)')),
+          const SizedBox(height: 12),
+          TextField(
+              controller: confirm,
+              obscureText: true,
+              decoration:
+                  const InputDecoration(labelText: 'Xác nhận mật khẩu mới')),
+        ],
+        if (error != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Text(error!, style: const TextStyle(color: AppColors.accent)),
+          ),
         const SizedBox(height: 16),
-        FilledButton(
-          onPressed: () => showMessage(
-              context, 'MSG10 · Mã PIN đã được gửi tới điện thoại.'),
-          child: const Text('GỬI MÃ PIN'),
+        BusyButton(
+          label: switch (step) {
+            0 => 'GỬI MÃ PIN',
+            1 => 'XÁC NHẬN PIN',
+            _ => 'ĐẶT LẠI MẬT KHẨU',
+          },
+          onPressed: switch (step) {
+            0 => sendPin,
+            1 => verifyPin,
+            _ => resetPassword,
+          },
         ),
       ],
     );
