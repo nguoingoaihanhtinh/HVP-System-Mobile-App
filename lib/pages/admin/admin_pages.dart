@@ -4,6 +4,7 @@ import '../../app/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/shared_widgets.dart';
 import '../shared/member_page.dart';
+import 'lifecycle_demo_screen.dart';
 
 class AdminShell extends StatefulWidget {
   final ValueChanged<BuildContext> onSwitchRole;
@@ -110,6 +111,12 @@ class AdminManageHubScreen extends StatelessWidget {
           title: 'Rank Trials',
           detail: 'Xem eligibility và phân quyền duyệt',
           onTap: () => open(const AdminRankScreen())),
+      const SizedBox(height: 10),
+      AdminManageTile(
+          icon: Icons.update_outlined,
+          title: 'Lifecycle demo',
+          detail: 'Hết hạn gói, inactive, comeback (mock job)',
+          onTap: () => open(const LifecycleDemoScreen())),
     ]);
   }
 }
